@@ -31,7 +31,12 @@
   .year-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 16px; padding: 8px; margin-bottom: 10px; }
   .yb-btn { width: 48px; height: 48px; border-radius: 12px; border: 0; background: var(--fill); color: var(--accent); font-size: 20px; font-weight: 700; cursor: pointer; }
   .yb-btn:active { opacity: .6; }
-  .yb-mid { text-align: center; flex: 1; cursor: pointer; }
+  .yb-mid { text-align: center; flex: 1; cursor: pointer; position: relative; }
+  .yb-mid select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; cursor: pointer; }
+  .yb-year .caret { font-size: 13px; color: var(--accent); margin-left: 4px; vertical-align: 5px; }
+  .jump { display: flex; gap: 6px; margin: 0 0 10px; }
+  .jump button { flex: 1; border: 0; background: var(--card); border-radius: 10px; padding: 9px 0; font-size: 14px; font-weight: 700; color: var(--accent); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .jump button:active { opacity: .6; }
   .yb-year { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
   .yb-year small { font-size: 16px; font-weight: 700; margin-left: 2px; }
   .yb-sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
@@ -119,16 +124,17 @@
 
   <div class="year-bar">
     <button class="yb-btn" id="prevY" aria-label="前の年">◀</button>
-    <div class="yb-mid" id="yMid"><div class="yb-year" id="yLabel"></div><div class="yb-sub" id="ySub"></div></div>
+    <div class="yb-mid" id="yMid"><div class="yb-year" id="yLabel"></div><div class="yb-sub" id="ySub"></div><select id="ySel" aria-label="年を選ぶ"></select></div>
     <button class="yb-btn" id="nextY" aria-label="次の年">▶</button>
   </div>
+  <div class="jump" id="jump"><button data-j="-10">−10年</button><button data-j="-5">−5年</button><button data-j="5">＋5年</button><button data-j="10">＋10年</button></div>
   <div class="tools">
     <button class="now-btn" id="nowBtn">今年に戻る</button>
     <div class="seg" id="sortSeg"><button data-sort="age" class="on">年齢順</button><button data-sort="bday">誕生日順</button></div>
   </div>
 
   <div class="list" id="list"></div>
-  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。長押しで年を大きく動かせます。</p>
+  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。年の数字を押すと一覧から選べます。◀▶の長押しや「±5年・±10年」でも大きく動かせます。</p>
 
   <div class="data">
     <h2>データ</h2>
@@ -166,7 +172,7 @@
 <script>
 (() => {
   'use strict';
-  const APP_VERSION = '1.2.0';
+  const APP_VERSION = '1.3.0';
   const KEY = 'nansai.people.v1', YEAR_KEY = 'nansai.year.v1', SORT_KEY = 'nansai.sort.v1', BK_KEY = 'nansai.lastBackupAt', SCHEMA = 'nansai.v1';
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
@@ -222,7 +228,8 @@
   // ---------- 描画 ----------
   function render() {
     const cy = thisYear(), diff = year - cy;
-    $('yLabel').innerHTML = year + '<small>年</small>';
+    $('yLabel').innerHTML = year + '<small>年</small><span class="caret">▼</span>';
+    fillYearSel();
     $('ySub').innerHTML = diff === 0 ? '今年' : diff > 0 ? '<b>' + diff + '年後</b>' : '<b>' + (-diff) + '年前</b>';
     $('nowBtn').classList.toggle('show', diff !== 0);
     document.querySelectorAll('#sortSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sort === sortBy));
@@ -269,7 +276,18 @@
   }
   holdBtn($('prevY'), -1); holdBtn($('nextY'), 1);
   $('nowBtn').onclick = () => setYear(thisYear());
-  $('yMid').onclick = () => setYear(thisYear());
+  // 年を一覧から選ぶ（iPhoneではくるくる回すピッカーが出る）
+  function fillYearSel() {
+    const cy = thisYear(), sel = $('ySel');
+    if (!sel.options.length) {
+      let h = '';
+      for (let y = cy + 60; y >= 1900; y--) { const d = y - cy; h += '<option value="' + y + '">' + y + '年' + (d === 0 ? '（今年）' : d > 0 ? '（' + d + '年後）' : '（' + (-d) + '年前）') + '</option>'; }
+      sel.innerHTML = h;
+    }
+    sel.value = String(year);
+  }
+  $('ySel').addEventListener('change', (e) => setYear(+e.target.value));
+  $('jump').addEventListener('click', (e) => { const b = e.target.closest('[data-j]'); if (b) setYear(year + Number(b.dataset.j)); });
   $('sortSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; sortBy = b.dataset.sort; store(SORT_KEY, sortBy); render(); });
   $('list').addEventListener('click', (e) => {
     if (e.target.id === 'emptyAdd') return openSheet(null);

@@ -63,6 +63,7 @@
   .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
   .tag { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; background: var(--fill); color: var(--muted); }
   .tag.ms { background: #FFF1D6; color: #9A5B00; }
+  .tag.eto { background: #F4EFE6; color: #7A5C2E; }
   .tag.gr { background: #E3F0FF; color: #1D5FB8; }
   .p-age { flex: none; text-align: right; }
   .p-age b { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -134,7 +135,7 @@
   </div>
 
   <div class="list" id="list"></div>
-  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。年の数字を押すと一覧から選べます。◀▶の長押しや「±5年・±10年」でも大きく動かせます。</p>
+  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。干支は生まれた年（西暦）で数えています。年の数字を押すと一覧から選べます。◀▶の長押しや「±5年・±10年」でも大きく動かせます。</p>
 
   <div class="data">
     <h2>データ</h2>
@@ -172,7 +173,7 @@
 <script>
 (() => {
   'use strict';
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.4.0';
   const KEY = 'nansai.people.v1', YEAR_KEY = 'nansai.year.v1', SORT_KEY = 'nansai.sort.v1', BK_KEY = 'nansai.lastBackupAt', SCHEMA = 'nansai.v1';
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
@@ -222,6 +223,9 @@
     if (n <= 12) return '高' + (n - 9);
     return '大' + (n - 12) + '相当';
   }
+  // 干支（生まれた年の西暦で数える）
+  const ETO = [['子', 'ね', '🐭'], ['丑', 'うし', '🐮'], ['寅', 'とら', '🐯'], ['卯', 'う', '🐰'], ['辰', 'たつ', '🐲'], ['巳', 'み', '🐍'], ['午', 'うま', '🐴'], ['未', 'ひつじ', '🐑'], ['申', 'さる', '🐵'], ['酉', 'とり', '🐔'], ['戌', 'いぬ', '🐶'], ['亥', 'い', '🐗']];
+  const etoOf = (y) => ETO[((y - 4) % 12 + 12) % 12];
   const MILE = { 18: '成人', 20: '二十歳', 60: '還暦', 70: '古希', 77: '喜寿', 80: '傘寿', 88: '米寿', 90: '卒寿', 99: '白寿', 100: '百寿' };
   const daysTo = (d) => { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((d - t) / 86400000); };
 
@@ -230,7 +234,8 @@
     const cy = thisYear(), diff = year - cy;
     $('yLabel').innerHTML = year + '<small>年</small><span class="caret">▼</span>';
     fillYearSel();
-    $('ySub').innerHTML = diff === 0 ? '今年' : diff > 0 ? '<b>' + diff + '年後</b>' : '<b>' + (-diff) + '年前</b>';
+    const ye = etoOf(year);
+    $('ySub').innerHTML = (diff === 0 ? '今年' : diff > 0 ? '<b>' + diff + '年後</b>' : '<b>' + (-diff) + '年前</b>') + '・' + ye[2] + ' ' + ye[0] + '年';
     $('nowBtn').classList.toggle('show', diff !== 0);
     document.querySelectorAll('#sortSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sort === sortBy));
     const el = $('list');
@@ -250,6 +255,9 @@
         : (bd.getMonth() + 1) + '/' + bd.getDate() + '(' + WD[bd.getDay()] + ')に' + (a === 0 ? '誕生' : a + '歳');
       if (year === cy && !dead) { const dd = daysTo(bd); sub += dd > 0 ? '　<span class="soon">あと' + dd + '日</span>' : dd === 0 ? '　<span class="soon">今日！🎉</span>' : '　<span class="nw">迎えた</span>'; }
       const tags = [];
+      const pe = etoOf(parts(p.birthday)[0]);
+      tags.push('<span class="tag eto">' + pe[2] + ' ' + pe[0] + '（' + pe[1] + '）年</span>');
+      if (!after && a > 0 && a % 12 === 0) tags.push('<span class="tag ms">年男・年女（' + (a / 12) + '回目）</span>');
       if (dead) {
         if (year === dy) tags.push('<span class="tag dd">この年に他界</span>');
         if (after) { tags.push('<span class="tag dd">没後' + (year - dy) + '年</span>'); if (KAIKI[year - dy]) tags.push('<span class="tag ms">' + KAIKI[year - dy] + '</span>'); }

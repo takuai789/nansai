@@ -50,7 +50,8 @@
 
   /* 一覧 */
   .list { display: flex; flex-direction: column; gap: 8px; }
-  .p { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; cursor: pointer; }
+  .p { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform .15s; }
+  .p.pressing { transform: scale(.97); }
   .p:active { opacity: .75; }
   .av { flex: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
   .p-main { flex: 1; min-width: 0; }
@@ -135,7 +136,7 @@
   </div>
 
   <div class="list" id="list"></div>
-  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。干支は生まれた年（西暦）で数えています。年の数字を押すと一覧から選べます。◀▶の長押しや「±5年・±10年」でも大きく動かせます。</p>
+  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。干支は生まれた年（西暦）で数えています。年の数字を押すと一覧から選べます。◀▶の長押しや「±5年・±10年」でも大きく動かせます。人を長押しすると、その人が生まれた年へ移ります（故人はもう一度長押しで亡くなった年へ）。</p>
 
   <div class="data">
     <h2>データ</h2>
@@ -173,7 +174,7 @@
 <script>
 (() => {
   'use strict';
-  const APP_VERSION = '1.4.0';
+  const APP_VERSION = '1.5.0';
   const KEY = 'nansai.people.v1', YEAR_KEY = 'nansai.year.v1', SORT_KEY = 'nansai.sort.v1', BK_KEY = 'nansai.lastBackupAt', SCHEMA = 'nansai.v1';
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
@@ -297,7 +298,27 @@
   $('ySel').addEventListener('change', (e) => setYear(+e.target.value));
   $('jump').addEventListener('click', (e) => { const b = e.target.closest('[data-j]'); if (b) setYear(year + Number(b.dataset.j)); });
   $('sortSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; sortBy = b.dataset.sort; store(SORT_KEY, sortBy); render(); });
+  // 長押し：その人が生まれた年へワープ（故人で、すでに生まれた年なら亡くなった年へ）
+  let lpTimer = null, lpFired = false, lpStart = null;
+  function warpTo(id) {
+    const p = people.find((x) => x.id === id); if (!p) return;
+    const by = parts(p.birthday)[0], dy = p.deathday ? parts(p.deathday)[0] : null;
+    if (dy && year === by) { setYear(dy); toast(p.name + 'が亡くなった年（' + dy + '年）へ'); }
+    else { setYear(by); toast(p.name + 'が生まれた年（' + by + '年）へ'); }
+    if (navigator.vibrate) navigator.vibrate(15);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  $('list').addEventListener('pointerdown', (e) => {
+    const c = e.target.closest('[data-id]'); if (!c) return;
+    lpFired = false; lpStart = [e.clientX, e.clientY]; c.classList.add('pressing');
+    clearTimeout(lpTimer);
+    lpTimer = setTimeout(() => { lpFired = true; c.classList.remove('pressing'); warpTo(c.dataset.id); }, 500);
+  });
+  $('list').addEventListener('pointermove', (e) => { if (lpStart && Math.hypot(e.clientX - lpStart[0], e.clientY - lpStart[1]) > 10) { clearTimeout(lpTimer); document.querySelectorAll('.p.pressing').forEach((x) => x.classList.remove('pressing')); } });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('list').addEventListener(ev, () => { clearTimeout(lpTimer); lpStart = null; document.querySelectorAll('.p.pressing').forEach((x) => x.classList.remove('pressing')); }));
+  $('list').addEventListener('contextmenu', (e) => { if (e.target.closest('[data-id]')) e.preventDefault(); });
   $('list').addEventListener('click', (e) => {
+    if (lpFired) { lpFired = false; return; }
     if (e.target.id === 'emptyAdd') return openSheet(null);
     const p = e.target.closest('[data-id]'); if (p) openSheet(p.dataset.id);
   });

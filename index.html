@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="ナンサイ" />
+<meta name="theme-color" content="#F2F2F7" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23E8618C'/%3E%3Ctext x='32' y='35' font-family='Arial,sans-serif' font-size='34' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3E%E6%AD%B3%3C/text%3E%3C/svg%3E" />
+<title>ナンサイ</title>
+<style>
+  :root {
+    --bg: #F2F2F7; --card: #fff; --ink: #1C1C1E; --muted: rgba(60,60,67,.6); --tertiary: rgba(60,60,67,.3); --sep: rgba(60,60,67,.18); --fill: rgba(118,118,128,.12);
+    --accent: #E8618C; --accent-soft: #FCE8EF; --red: #FF3B30;
+    --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; padding: calc(var(--safe-top) + 10px) 16px calc(var(--safe-bottom) + 40px); min-height: 100vh; }
+  button, input, select { font-family: inherit; }
+  .shell { max-width: 560px; margin: 0 auto; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 4px 14px; }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: .01em; }
+  .add-btn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 4px 14px -4px rgba(232,97,140,.6); }
+
+  /* 年の切り替え */
+  .year-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 16px; padding: 8px; margin-bottom: 10px; }
+  .yb-btn { width: 48px; height: 48px; border-radius: 12px; border: 0; background: var(--fill); color: var(--accent); font-size: 20px; font-weight: 700; cursor: pointer; }
+  .yb-btn:active { opacity: .6; }
+  .yb-mid { text-align: center; flex: 1; cursor: pointer; }
+  .yb-year { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+  .yb-year small { font-size: 16px; font-weight: 700; margin-left: 2px; }
+  .yb-sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .yb-sub b { color: var(--accent); }
+  .tools { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 10px; gap: 8px; }
+  .now-btn { border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 0; visibility: hidden; }
+  .now-btn.show { visibility: visible; }
+  .seg { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 2px; }
+  .seg button { border: 0; background: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 7px; color: var(--ink); cursor: pointer; }
+  .seg button.on { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  /* 一覧 */
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .p { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; cursor: pointer; }
+  .p:active { opacity: .75; }
+  .av { flex: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
+  .p-main { flex: 1; min-width: 0; }
+  .p-name { font-size: 17px; font-weight: 700; display: flex; align-items: baseline; gap: 6px; }
+  .p-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-rel { font-size: 12px; font-weight: 500; color: var(--muted); flex: none; }
+  .p-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .p-sub .soon { color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .p-sub .nw { white-space: nowrap; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .tag { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; background: var(--fill); color: var(--muted); }
+  .tag.ms { background: #FFF1D6; color: #9A5B00; }
+  .tag.gr { background: #E3F0FF; color: #1D5FB8; }
+  .p-age { flex: none; text-align: right; }
+  .p-age b { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .p-age small { font-size: 14px; font-weight: 700; margin-left: 1px; }
+  .p-age .now { display: block; font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 4px; white-space: nowrap; }
+  .p.unborn { opacity: .5; }
+  .av.dead { filter: grayscale(.85) brightness(1.05); }
+  .p.gone .p-age b { color: rgba(60,60,67,.55); }
+  .p-name span:first-child { flex: 0 1 auto; min-width: 3em; }
+  .p-age .if { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+  .tag.dd { background: #EDEDF0; color: #5A5A60; }
+  .sw-row { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 12px; padding: 10px 14px; margin-top: 14px; font-size: 16px; }
+  .sw { width: 51px; height: 31px; border-radius: 999px; background: #E3E3E8; position: relative; border: 0; cursor: pointer; flex: none; transition: background .2s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.25); transition: transform .2s; }
+  .sw.on { background: #34C759; }
+  .sw.on::after { transform: translateX(20px); }
+  .p.unborn .p-age b { font-size: 16px; font-weight: 700; color: var(--muted); }
+  .empty { background: var(--card); border-radius: 16px; padding: 30px 20px; text-align: center; color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .empty button { margin-top: 12px; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 11px 20px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .note { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 12px 6px 0; }
+
+  .data { margin-top: 26px; }
+  .data h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 4px 6px; }
+  .data-card { background: var(--card); border-radius: 14px; overflow: hidden; }
+  .data-card button { display: block; width: 100%; text-align: left; border: 0; border-bottom: .5px solid var(--sep); background: none; padding: 14px 16px; font-size: 16px; color: var(--accent); cursor: pointer; }
+  .data-card button:last-child { border-bottom: 0; }
+  .data-note { font-size: 12px; color: var(--muted); margin: 6px 6px 0; line-height: 1.6; }
+  footer { text-align: center; color: var(--tertiary); font-size: 12px; margin-top: 24px; }
+
+  /* シート */
+  .bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  .bg.show { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: var(--kb, 0px); z-index: 21; max-width: 560px; margin: 0 auto; background: var(--bg); border-radius: 16px 16px 0 0; padding: 10px 16px calc(var(--safe-bottom) + 18px); transform: translateY(105%); transition: transform .3s cubic-bezier(.32,.72,0,1); max-height: calc(100% - var(--safe-top) - 16px); overflow-y: auto; }
+  .sheet.show { transform: translateY(0); }
+  .sheet::before { content: ""; display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--tertiary); margin: 0 auto 10px; }
+  .sh-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .sh-head h3 { font-size: 17px; font-weight: 600; }
+  .sh-x { width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(118,118,128,.14); color: var(--muted); font-size: 14px; cursor: pointer; }
+  .lbl { display: block; font-size: 13px; color: var(--muted); margin: 14px 4px 6px; }
+  .field { width: 100%; border: 0; border-radius: 12px; background: var(--card); padding: 12px 14px; font-size: 17px; color: var(--ink); outline: none; }
+  .bday { display: flex; gap: 6px; }
+  .bday select { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; text-align: center; font-weight: 600; }
+  .colors { display: flex; gap: 10px; flex-wrap: wrap; }
+  .colors button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
+  .colors button.on { border-color: var(--ink); }
+  .save { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 13px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .del { width: 100%; margin-top: 10px; padding: 13px; border: 0; border-radius: 13px; background: var(--card); color: var(--red); font-size: 15px; cursor: pointer; }
+  .preview { font-size: 13px; color: var(--accent); font-weight: 600; margin: 8px 4px 0; min-height: 1.4em; }
+
+  .toast { position: fixed; left: 50%; top: calc(var(--safe-top) + 14px); transform: translate(-50%, -8px); background: rgba(28,28,30,.92); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 50; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #updateBanner { position: fixed; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 14px); z-index: 60; display: none; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: #fff; border: 0; border-radius: 14px; padding: 14px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.25); cursor: pointer; }
+</style>
+<script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();});}catch(e){}</script>
+</head>
+<body>
+<div class="shell">
+  <header><h1>ナンサイ</h1><button class="add-btn" id="addBtn" aria-label="追加">＋</button></header>
+
+  <div class="year-bar">
+    <button class="yb-btn" id="prevY" aria-label="前の年">◀</button>
+    <div class="yb-mid" id="yMid"><div class="yb-year" id="yLabel"></div><div class="yb-sub" id="ySub"></div></div>
+    <button class="yb-btn" id="nextY" aria-label="次の年">▶</button>
+  </div>
+  <div class="tools">
+    <button class="now-btn" id="nowBtn">今年に戻る</button>
+    <div class="seg" id="sortSeg"><button data-sort="age" class="on">年齢順</button><button data-sort="bday">誕生日順</button></div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <p class="note">大きな数字は「その年の誕生日を迎えたときの年齢」、その下の小さな数字は今日の満年齢です。亡くなった人は「生きていれば」の年齢で数えます。学年は4月始まりの年度で数えています（4/1生まれは早生まれ）。長押しで年を大きく動かせます。</p>
+
+  <div class="data">
+    <h2>データ</h2>
+    <div class="data-card"><button id="exportBtn">書き出す（バックアップ）</button><button id="importBtn">取り込む</button></div>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
+    <div class="data-note" id="bkNote"></div>
+  </div>
+  <footer id="ver"></footer>
+</div>
+
+<div class="bg" id="bg"></div>
+<div class="sheet" id="sheet">
+  <div class="sh-head"><h3 id="shTitle">家族を追加</h3><button class="sh-x" id="shX">✕</button></div>
+  <label class="lbl">名前</label>
+  <input class="field" id="fName" placeholder="例：母、たろう" autocomplete="off" autocorrect="off" spellcheck="false" />
+  <label class="lbl">続柄・メモ（任意）</label>
+  <input class="field" id="fRel" placeholder="例：父、姉、甥" autocomplete="off" autocorrect="off" spellcheck="false" />
+  <label class="lbl">誕生日</label>
+  <div class="bday"><select class="field" id="fY"></select><select class="field" id="fM"></select><select class="field" id="fD"></select></div>
+  <div class="preview" id="fPrev"></div>
+  <div class="sw-row"><span>亡くなった</span><button class="sw" id="fDeadSw" aria-label="亡くなった"></button></div>
+  <div id="deadBox" style="display:none">
+    <label class="lbl">亡くなった日</label>
+    <div class="bday"><select class="field" id="fDY"></select><select class="field" id="fDM"></select><select class="field" id="fDD"></select></div>
+    <div class="preview" id="fDPrev"></div>
+  </div>
+  <label class="lbl">色</label>
+  <div class="colors" id="fColors"></div>
+  <button class="save" id="saveBtn">保存</button>
+  <button class="del" id="delBtn" style="display:none">削除</button>
+</div>
+<div class="toast" id="toast"></div>
+<button id="updateBanner">新しいバージョンがあります — タップで更新</button>
+
+<script>
+(() => {
+  'use strict';
+  const APP_VERSION = '1.2.0';
+  const KEY = 'nansai.people.v1', YEAR_KEY = 'nansai.year.v1', SORT_KEY = 'nansai.sort.v1', BK_KEY = 'nansai.lastBackupAt', SCHEMA = 'nansai.v1';
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, '0');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const WD = '日月火水木金土';
+  const COLORS = ['#E8618C', '#F2994A', '#E2B93B', '#27AE60', '#2D9CDB', '#5B6CF0', '#9B51E0', '#8E8E93'];
+  const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+  const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+  let people = load(KEY, []);
+  const thisYear = () => new Date().getFullYear();
+  let year = thisYear();
+  let sortBy = load(SORT_KEY, 'age');
+  const save = () => store(KEY, people);
+
+  // ---------- 計算 ----------
+  // b = 'YYYY-MM-DD'。その年の誕生日（2/29生まれは平年なら2/28）
+  const parts = (b) => b.split('-').map(Number);
+  function bdayIn(p, y) { const [, m, d] = parts(p.birthday); const last = new Date(y, m, 0).getDate(); return new Date(y, m - 1, Math.min(d, last)); }
+  const ageIn = (p, y) => y - parts(p.birthday)[0];
+  function ageOn(p, date) { const t = new Date(date); t.setHours(0, 0, 0, 0); let a = t.getFullYear() - parts(p.birthday)[0]; if (bdayIn(p, t.getFullYear()) > t) a--; return a; }
+  const ageNow = (p) => ageOn(p, new Date());
+  // 満◯歳◯か月（誕生日の「日」を過ぎたら1か月と数える。31日生まれは月末で数える）
+  function ageYM(p, date = new Date()) {
+    const t = new Date(date); t.setHours(0, 0, 0, 0);
+    const [by, bm, bd] = parts(p.birthday);
+    let months = (t.getFullYear() - by) * 12 + (t.getMonth() + 1 - bm);
+    const last = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    if (t.getDate() < Math.min(bd, last)) months--;
+    return [Math.floor(months / 12), months % 12];
+  }
+  const ymText = (p) => { const [y, m] = ageYM(p); return '満' + y + '歳' + (m ? m + 'か月' : ''); };
+  const toDate = (s) => { const [y, m, d] = parts(s); return new Date(y, m - 1, d); };
+  const deathAge = (p) => p.deathday ? ageOn(p, toDate(p.deathday)) : null;
+  const ymdJ = (s) => { const [y, m, d] = parts(s); return y + '/' + m + '/' + d; };
+  // 年忌（亡くなった年＋n年）
+  const KAIKI = { 1: '一周忌', 2: '三回忌', 6: '七回忌', 12: '十三回忌', 16: '十七回忌', 22: '二十三回忌', 26: '二十七回忌', 32: '三十三回忌', 49: '五十回忌' };
+  // 学年（その年の4月に始まる年度で数える。4/2〜翌4/1生まれが同じ学年）
+  function gradeIn(p, y) {
+    const [by, bm, bd] = parts(p.birthday);
+    const early = bm < 4 || (bm === 4 && bd === 1);
+    const n = y - by - (early ? 6 : 7) + 1;       // 小1 = 1
+    if (n < -2 || n > 16) return null;
+    if (n <= 0) return ['年少', '年中', '年長'][n + 2];
+    if (n <= 6) return '小' + n;
+    if (n <= 9) return '中' + (n - 6);
+    if (n <= 12) return '高' + (n - 9);
+    return '大' + (n - 12) + '相当';
+  }
+  const MILE = { 18: '成人', 20: '二十歳', 60: '還暦', 70: '古希', 77: '喜寿', 80: '傘寿', 88: '米寿', 90: '卒寿', 99: '白寿', 100: '百寿' };
+  const daysTo = (d) => { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((d - t) / 86400000); };
+
+  // ---------- 描画 ----------
+  function render() {
+    const cy = thisYear(), diff = year - cy;
+    $('yLabel').innerHTML = year + '<small>年</small>';
+    $('ySub').innerHTML = diff === 0 ? '今年' : diff > 0 ? '<b>' + diff + '年後</b>' : '<b>' + (-diff) + '年前</b>';
+    $('nowBtn').classList.toggle('show', diff !== 0);
+    document.querySelectorAll('#sortSeg button').forEach((b) => b.classList.toggle('on', b.dataset.sort === sortBy));
+    const el = $('list');
+    if (!people.length) { el.innerHTML = '<div class="empty">家族の誕生日を入れると、<br>選んだ年にみんなが何歳かがわかります。<br><button id="emptyAdd">＋ 家族を追加</button></div>'; return; }
+    const md = (p) => { const [, m, d] = parts(p.birthday); return m * 100 + d; };
+    const list = people.slice().sort(sortBy === 'age' ? (a, b) => a.birthday.localeCompare(b.birthday) : (a, b) => md(a) - md(b) || a.birthday.localeCompare(b.birthday));
+    el.innerHTML = list.map((p) => {
+      const a = ageIn(p, year), bd = bdayIn(p, year);
+      const dead = !!p.deathday, dy = dead ? parts(p.deathday)[0] : null;
+      const name = '<div class="p-name"><span>' + esc(p.name) + '</span>' + (p.rel ? '<span class="p-rel">' + esc(p.rel) + '</span>' : '') + (dead ? '<span class="p-rel">故人</span>' : '') + '</div>';
+      const av = '<div class="av' + (dead ? ' dead' : '') + '" style="background:' + (p.color || COLORS[0]) + '">' + esc((p.name || '?').slice(0, 1)) + '</div>';
+      if (a < 0) return '<div class="p unborn" data-id="' + p.id + '">' + av + '<div class="p-main">' + name + '<div class="p-sub">まだ生まれていない年です</div></div><div class="p-age"><b>—</b></div></div>';
+      const after = dead && year > dy;          // 亡くなった後の年
+      const inDeath = dead && year === dy;
+      const big = inDeath ? deathAge(p) : a;
+      let sub = inDeath ? (() => { const dd = toDate(p.deathday); return (dd.getMonth() + 1) + '/' + dd.getDate() + '(' + WD[dd.getDay()] + ')に' + deathAge(p) + '歳で他界'; })()
+        : (bd.getMonth() + 1) + '/' + bd.getDate() + '(' + WD[bd.getDay()] + ')に' + (a === 0 ? '誕生' : a + '歳');
+      if (year === cy && !dead) { const dd = daysTo(bd); sub += dd > 0 ? '　<span class="soon">あと' + dd + '日</span>' : dd === 0 ? '　<span class="soon">今日！🎉</span>' : '　<span class="nw">迎えた</span>'; }
+      const tags = [];
+      if (dead) {
+        if (year === dy) tags.push('<span class="tag dd">この年に他界</span>');
+        if (after) { tags.push('<span class="tag dd">没後' + (year - dy) + '年</span>'); if (KAIKI[year - dy]) tags.push('<span class="tag ms">' + KAIKI[year - dy] + '</span>'); }
+      }
+      if (!after && MILE[a]) tags.push('<span class="tag ms">' + MILE[a] + '</span>');
+      const g = !after ? gradeIn(p, year) : null; if (g) tags.push('<span class="tag gr">' + g + '（' + year + '年度）</span>');
+      // 今日の満年齢（故人は「生きていれば」）
+      const today = '<span class="now">' + (inDeath ? '生きていれば今日 ' : '今日 ') + ymText(p) + '</span>';
+      const deadLine = dead && !after && year !== dy ? '' : '';
+      return '<div class="p' + (after ? ' gone' : '') + '" data-id="' + p.id + '">' + av + '<div class="p-main">' + name + '<div class="p-sub">' + sub + '</div>' +
+        (dead && year !== dy ? '<div class="p-sub">' + ymdJ(p.deathday) + 'に' + deathAge(p) + '歳で他界</div>' : '') +
+        (tags.length ? '<div class="tags">' + tags.join('') + '</div>' : '') + '</div>' +
+        '<div class="p-age' + (inDeath ? ' died' : '') + '">' + (dead && !inDeath ? '<span class="if">生きていれば</span>' : '') + '<b>' + big + '</b><small>歳</small>' + today + '</div></div>';
+    }).join('');
+  }
+  function setYear(y) { year = Math.max(1900, Math.min(2200, y)); store(YEAR_KEY, year); render(); }
+
+  // 年の切り替え（長押しで連続）
+  function holdBtn(btn, d) {
+    let t = null, n = 0;
+    const step = () => setYear(year + d);
+    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); step(); n = 0; t = setTimeout(function rep() { step(); n++; t = setTimeout(rep, n > 6 ? 60 : 160); }, 420); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, () => clearTimeout(t)));
+  }
+  holdBtn($('prevY'), -1); holdBtn($('nextY'), 1);
+  $('nowBtn').onclick = () => setYear(thisYear());
+  $('yMid').onclick = () => setYear(thisYear());
+  $('sortSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; sortBy = b.dataset.sort; store(SORT_KEY, sortBy); render(); });
+  $('list').addEventListener('click', (e) => {
+    if (e.target.id === 'emptyAdd') return openSheet(null);
+    const p = e.target.closest('[data-id]'); if (p) openSheet(p.dataset.id);
+  });
+
+  // ---------- 追加・編集シート ----------
+  let editId = null, editColor = COLORS[0];
+  (function fillSelects() {
+    const cy = thisYear(); let s = '';
+    for (let y = cy; y >= 1910; y--) s += '<option value="' + y + '">' + y + '年</option>';
+    $('fY').innerHTML = s;
+    s = ''; for (let m = 1; m <= 12; m++) s += '<option value="' + m + '">' + m + '月</option>'; $('fM').innerHTML = s;
+    fillDays();
+  })();
+  function fillDays(Y = 'fY', M = 'fM', D = 'fD') {
+    const y = +$(Y).value || 2000, m = +$(M).value || 1, keep = +$(D).value || 1;
+    const last = new Date(y, m, 0).getDate(); let s = '';
+    for (let d = 1; d <= last; d++) s += '<option value="' + d + '">' + d + '日</option>';
+    $(D).innerHTML = s; $(D).value = String(Math.min(keep, last));
+  }
+  (function fillDeath() { $('fDY').innerHTML = $('fY').innerHTML; $('fDM').innerHTML = $('fM').innerHTML; fillDays('fDY', 'fDM', 'fDD'); })();
+  let deadOn = false;
+  function setDead(v) { deadOn = v; $('fDeadSw').classList.toggle('on', v); $('deadBox').style.display = v ? '' : 'none'; preview(); }
+  $('fDeadSw').onclick = () => setDead(!deadOn);
+  ['fDY', 'fDM'].forEach((id) => $(id).addEventListener('change', () => { fillDays('fDY', 'fDM', 'fDD'); preview(); }));
+  $('fDD').addEventListener('change', () => preview());
+  const fDate = (Y, M, D) => $(Y).value + '-' + pad($(M).value) + '-' + pad($(D).value);
+  function preview() {
+    const tmp = { birthday: fDate('fY', 'fM', 'fD') };
+    const a = ageNow(tmp);
+    $('fPrev').textContent = a >= 0 ? (deadOn ? '生きていれば今日 ' : '今日 ') + ymText(tmp) : '';
+    if (deadOn) { const da = ageOn(tmp, toDate(fDate('fDY', 'fDM', 'fDD'))); $('fDPrev').textContent = da >= 0 ? da + '歳で他界' : '誕生日より前の日付です'; }
+  }
+  ['fY', 'fM'].forEach((id) => $(id).addEventListener('change', () => { fillDays(); preview(); }));
+  $('fD').addEventListener('change', preview);
+  function renderColors() { $('fColors').innerHTML = COLORS.map((c) => '<button data-c="' + c + '" class="' + (c === editColor ? 'on' : '') + '" style="background:' + c + '" aria-label="色"></button>').join(''); }
+  $('fColors').addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (b) { editColor = b.dataset.c; renderColors(); } });
+  function openSheet(id) {
+    const p = id ? people.find((x) => x.id === id) : null;
+    editId = p ? p.id : null;
+    $('shTitle').textContent = p ? '編集' : '家族を追加';
+    $('fName').value = p ? p.name : ''; $('fRel').value = p ? p.rel || '' : '';
+    const [y, m, d] = p ? parts(p.birthday) : [1990, 1, 1];
+    $('fY').value = String(y); $('fM').value = String(m); fillDays(); $('fD').value = String(d);
+    if (p && p.deathday) { const [dy2, dm2, dd2] = parts(p.deathday); $('fDY').value = String(dy2); $('fDM').value = String(dm2); fillDays('fDY', 'fDM', 'fDD'); $('fDD').value = String(dd2); }
+    else { const t = new Date(); $('fDY').value = String(t.getFullYear()); $('fDM').value = String(t.getMonth() + 1); fillDays('fDY', 'fDM', 'fDD'); $('fDD').value = String(t.getDate()); }
+    setDead(!!(p && p.deathday));
+    editColor = p ? p.color || COLORS[0] : COLORS[people.length % COLORS.length];
+    renderColors(); preview();
+    $('delBtn').style.display = p ? '' : 'none';
+    $('bg').classList.add('show'); $('sheet').classList.add('show');
+    if (!p) setTimeout(() => $('fName').focus(), 320);
+  }
+  function closeSheet() { $('bg').classList.remove('show'); $('sheet').classList.remove('show'); if (document.activeElement) document.activeElement.blur(); }
+  $('addBtn').onclick = () => openSheet(null);
+  $('shX').onclick = closeSheet; $('bg').onclick = closeSheet;
+  $('saveBtn').onclick = () => {
+    const name = $('fName').value.trim(); if (!name) { $('fName').focus(); return; }
+    const birthday = fDate('fY', 'fM', 'fD'), deathday = deadOn ? fDate('fDY', 'fDM', 'fDD') : '';
+    if (deathday && deathday < birthday) { toast('亡くなった日が誕生日より前になっています'); return; }
+    const v = { name, rel: $('fRel').value.trim(), birthday, deathday, color: editColor, updatedAt: Date.now() };
+    if (editId) Object.assign(people.find((x) => x.id === editId), v);
+    else people.push(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }, v));
+    save(); closeSheet(); render();
+  };
+  $('delBtn').onclick = async () => {
+    if (!editId) return;
+    if (!(await uiAsk('「' + people.find((x) => x.id === editId).name + '」を削除しますか？', '削除する'))) return;
+    people = people.filter((x) => x.id !== editId); save(); closeSheet(); render();
+  };
+
+  // ---------- バックアップ ----------
+  function bkDays() { const t = Number(localStorage.getItem(BK_KEY) || 0); return t ? Math.floor((Date.now() - t) / 86400000) : null; }
+  function renderBk() { const d = bkDays(); $('bkNote').textContent = (d === null ? 'まだ一度もバックアップしていません' : d === 0 ? '前回のバックアップ：今日' : '前回のバックアップから ' + d + '日') + '。データはこの端末の中だけにあります。'; }
+  function bkAskSaved() {
+    return new Promise((resolve) => {
+      const bg = document.createElement('div');
+      bg.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center;padding:24px';
+      bg.innerHTML = '<div style="width:100%;max-width:330px;background:#fff;color:#1c1c1e;border-radius:18px;padding:20px 20px 12px"><div style="font-size:16px;font-weight:700;margin-bottom:6px">バックアップは保存できましたか？</div><div style="font-size:14px;line-height:1.6;color:#6e6e73">保存できていれば、前回のバックアップ日を更新します。</div><div style="display:flex;justify-content:flex-end;gap:4px;margin-top:12px"><button data-v="0" style="border:0;background:none;font-size:15px;padding:10px 12px;color:#6e6e73">やめた</button><button data-v="1" style="border:0;background:none;font-size:15px;font-weight:700;padding:10px 12px;color:#007aff">保存できた</button></div></div>';
+      bg.addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (!b) return; bg.remove(); resolve(b.dataset.v === '1'); });
+      document.body.appendChild(bg);
+    });
+  }
+  async function bkSave(text) {
+    const d = new Date(), name = 'ナンサイ_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.json';
+    if (navigator.maxTouchPoints > 0) {
+      try { const file = new File([text], name, { type: 'application/json' }); if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return 'ok'; } }
+      catch (e) { if (e && e.name === 'AbortError') return (await bkAskSaved()) ? 'ok' : 'cancel'; }
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+    return 'ok';
+  }
+  $('exportBtn').onclick = async () => {
+    if (await bkSave(JSON.stringify({ schema: SCHEMA, exportedAt: new Date().toISOString(), people }, null, 2)) !== 'ok') return;
+    try { localStorage.setItem(BK_KEY, String(Date.now())); } catch (e) {}
+    renderBk(); toast('書き出しました');
+  };
+  $('importBtn').onclick = () => $('importFile').click();
+  $('importFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (data.schema !== SCHEMA || !Array.isArray(data.people)) { toast('ナンサイのデータではないようです'); return; }
+      const byId = new Map(people.map((p) => [p.id, p])); let n = 0;
+      for (const p of data.people) { const l = byId.get(p.id); if (!l || (p.updatedAt || 0) > (l.updatedAt || 0)) { byId.set(p.id, p); n++; } }
+      people = [...byId.values()]; save(); render(); toast(n + '人分を取り込みました');
+    } catch (err) { toast('読み込めないファイルです'); }
+  });
+
+  let tT; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tT); tT = setTimeout(() => t.classList.remove('show'), 2200); }
+
+  // キーボード対策（シートをキーボードの上へ）
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const apply = () => document.documentElement.style.setProperty('--kb', Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px');
+    vv.addEventListener('resize', apply); vv.addEventListener('scroll', apply);
+  }
+
+  // 起動：前回見ていた年は「今年」に戻す（日をまたいで開いたときに迷わないように）
+  $('ver').textContent = 'ナンサイ v' + APP_VERSION;
+  renderBk(); render();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') render(); });
+
+  // ---------- 自動アップデート ----------
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('sw.js');
+        const show = (w) => { const b = $('updateBanner'); b.style.display = 'flex'; b.onclick = () => { b.textContent = '更新中…'; w.postMessage('SKIP_WAITING'); }; };
+        if (reg.waiting && navigator.serviceWorker.controller) show(reg.waiting);
+        reg.addEventListener('updatefound', () => { const n = reg.installing; if (!n) return; n.addEventListener('statechange', () => { if (n.state === 'installed' && navigator.serviceWorker.controller) show(n); }); });
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+        let done = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (done) return; done = true; location.reload(); });
+      } catch (e) {}
+    });
+  }
+})();
+</script>
+<div id="ui-toast" style="position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 16px);transform:translateX(-50%);background:rgba(28,28,30,.94);color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;z-index:9000;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;text-align:center;font-family:inherit"></div>
+<div id="ui-ask" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:9001;padding:24px"><div style="background:#fff;color:#1c1c1e;border-radius:16px;padding:20px 18px 14px;max-width:330px;width:100%;font-family:inherit"><p id="ui-ask-msg" style="margin:0 0 16px;font-size:15px;line-height:1.7;white-space:pre-line;text-align:center"></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button type="button" id="ui-ask-no" style="padding:11px;border-radius:10px;border:0;background:rgba(0,0,0,.07);color:inherit;font:inherit;font-size:15px;font-weight:700">やめる</button><button type="button" id="ui-ask-yes" style="padding:11px;border-radius:10px;border:0;background:#E5484D;color:#fff;font:inherit;font-size:15px;font-weight:700">OK</button></div></div></div>
+<script>
+  // 自前のお知らせ・確認（iPhoneのホーム画面アプリでは alert/confirm が出ないことがあるため）
+  let _uiT = 0;
+  function uiToast(msg){ const t=document.getElementById('ui-toast'); t.textContent=msg; t.style.opacity='1'; clearTimeout(_uiT); _uiT=setTimeout(()=>{t.style.opacity='0';}, 2400); }
+  function uiAsk(msg, yes){ return new Promise(res=>{ const bg=document.getElementById('ui-ask'); document.getElementById('ui-ask-msg').textContent=msg; const y=document.getElementById('ui-ask-yes'), n=document.getElementById('ui-ask-no'); y.textContent=yes||'OK'; bg.style.display='flex'; const done=v=>{ bg.style.display='none'; y.onclick=n.onclick=null; res(v); }; y.onclick=()=>done(true); n.onclick=()=>done(false); }); }
+</script>
+</body>
+</html>
